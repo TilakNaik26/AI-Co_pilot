@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Life Copilot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0d0f;
+    --surface: #16161a;
+    --surface2: #1e1e24;
+    --border: rgba(255,255,255,0.07);
+    --border-hover: rgba(255,255,255,0.14);
+    --text: #f0efe8;
+    --text-muted: #888780;
+    --text-dim: #555452;
+    --accent: #7f77dd;
+    --accent-soft: rgba(127,119,221,0.12);
+    --accent-glow: rgba(127,119,221,0.25);
+    --success: #1d9e75;
+    --success-soft: rgba(29,158,117,0.12);
+    --danger: #e24b4a;
+    --danger-soft: rgba(226,75,74,0.1);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --font: 'DM Sans', sans-serif;
+    --font-serif: 'DM Serif Display', serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: 1.6;
+    height: 100dvh;
+    display: flex;
+    overflow: hidden;
+  }
+
+  /* ─── Sidebar ─── */
+  .sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 20px 16px;
+    gap: 24px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 0;
+  }
+
+  .logo-icon {
+    width: 32px;
+    height: 32px;
+    background: var(--accent);
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+
+  .logo-text {
+    font-family: var(--font-serif);
+    font-size: 17px;
+    letter-spacing: -0.02em;
+  }
+
+  .logo-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 300;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .new-chat-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 12px;
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-glow);
+    border-radius: var(--radius-sm);
+    color: var(--accent);
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: var(--font);
+  }
+  .new-chat-btn:hover { background: rgba(127,119,221,0.2); }
+  .new-chat-btn svg { flex-shrink: 0; }
+
+  .section-label {
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    font-weight: 500;
+    padding: 0 4px;
+    margin-bottom: 6px;
+  }
+
+  /* Upload zone */
+  .upload-zone {
+    border: 1px dashed var(--border-hover);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+  .upload-zone input { display: none; }
+  .upload-icon { font-size: 22px; margin-bottom: 6px; }
+  .upload-text { font-size: 12.5px; color: var(--text-muted); }
+  .upload-text strong { color: var(--accent); font-weight: 500; }
+
+  .uploaded-files { display: flex; flex-direction: column; gap: 4px; }
+
+  .file-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    background: var(--surface2);
+    border-radius: 6px;
+    font-size: 12.5px;
+    color: var(--text-muted);
+    overflow: hidden;
+  }
+  .file-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+  .file-chip .remove {
+    flex-shrink: 0;
+    cursor: pointer;
+    color: var(--text-dim);
+    transition: color 0.15s;
+    background: none;
+    border: none;
+    font-size: 14px;
+    padding: 0;
+    line-height: 1;
+  }
+  .file-chip .remove:hover { color: var(--danger); }
+
+  .sidebar-footer {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .model-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 10px;
+    background: var(--surface2);
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .model-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--success);
+    flex-shrink: 0;
+  }
+
+  /* ─── Main chat area ─── */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg);
+  }
+
+  .chat-header {
+    padding: 18px 28px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .chat-title { font-family: var(--font-serif); font-size: 18px; font-style: italic; }
+  .chat-hint { font-size: 12.5px; color: var(--text-dim); }
+
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    scroll-behavior: smooth;
+  }
+
+  .messages::-webkit-scrollbar { width: 4px; }
+  .messages::-webkit-scrollbar-track { background: transparent; }
+  .messages::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 2px; }
+
+  /* Welcome state */
+  .welcome {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 32px;
+    padding: 40px;
+    text-align: center;
+  }
+
+  .welcome-headline {
+    font-family: var(--font-serif);
+    font-size: 36px;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    max-width: 480px;
+  }
+
+  .welcome-headline em { color: var(--accent); font-style: italic; }
+
+  .welcome-desc {
+    font-size: 14.5px;
+    color: var(--text-muted);
+    max-width: 380px;
+    line-height: 1.7;
+  }
+
+  .suggestions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    max-width: 520px;
+    width: 100%;
+  }
+
+  .suggestion {
+    padding: 12px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: var(--font);
+    color: var(--text);
+  }
+  .suggestion:hover {
+    border-color: var(--border-hover);
+    background: var(--surface2);
+  }
+  .suggestion-icon { font-size: 16px; margin-bottom: 6px; display: block; }
+  .suggestion-text { font-size: 13px; color: var(--text-muted); line-height: 1.4; }
+
+  /* Messages */
+  .msg {
+    display: flex;
+    gap: 12px;
+    max-width: 740px;
+    animation: fadeUp 0.2s ease-out;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg.user { flex-direction: row-reverse; align-self: flex-end; }
+
+  .avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .avatar.ai { background: var(--accent); color: white; font-family: var(--font-serif); }
+  .avatar.user-av { background: var(--surface2); border: 1px solid var(--border-hover); color: var(--text-muted); }
+
+  .bubble {
+    padding: 11px 15px;
+    border-radius: 14px;
+    line-height: 1.65;
+    font-size: 14.5px;
+    max-width: 620px;
+  }
+  .msg.user .bubble {
+    background: var(--accent);
+    color: white;
+    border-bottom-right-radius: 4px;
+  }
+  .msg.ai .bubble {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-bottom-left-radius: 4px;
+    color: var(--text);
+  }
+
+  .bubble p + p { margin-top: 8px; }
+  .bubble code {
+    background: rgba(255,255,255,0.08);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: 'Courier New', monospace;
+  }
+
+  /* Thinking indicator */
+  .thinking .bubble {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 13px 16px;
+  }
+  .dot-pulse { display: flex; gap: 4px; }
+  .dot-pulse span {
+    width: 5px; height: 5px;
+    background: var(--text-muted);
+    border-radius: 50%;
+    animation: pulse 1.2s infinite;
+  }
+  .dot-pulse span:nth-child(2) { animation-delay: 0.2s; }
+  .dot-pulse span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes pulse {
+    0%, 60%, 100% { opacity: 0.3; transform: scale(0.8); }
+    30% { opacity: 1; transform: scale(1); }
+  }
+
+  /* ─── Input area ─── */
+  .input-area {
+    padding: 16px 28px 22px;
+    flex-shrink: 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .input-wrapper {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    padding: 10px 10px 10px 16px;
+    transition: border-color 0.15s;
+  }
+  .input-wrapper:focus-within { border-color: var(--border-hover); }
+
+  #msg-input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14.5px;
+    resize: none;
+    max-height: 140px;
+    line-height: 1.6;
+    padding: 2px 0;
+  }
+  #msg-input::placeholder { color: var(--text-dim); }
+
+  .send-btn {
+    width: 34px;
+    height: 34px;
+    background: var(--accent);
+    border: none;
+    border-radius: 9px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
+    color: white;
+  }
+  .send-btn:hover { background: #9089e3; }
+  .send-btn:disabled { background: var(--surface2); color: var(--text-dim); cursor: not-allowed; }
+
+  .input-hint {
+    text-align: center;
+    font-size: 11.5px;
+    color: var(--text-dim);
+    margin-top: 8px;
+  }
+
+  /* ─── Toast ─── */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    padding: 10px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 13.5px;
+    font-weight: 500;
+    animation: slideIn 0.25s ease-out;
+    z-index: 100;
+  }
+  .toast.success { background: var(--success-soft); border: 1px solid var(--success); color: #5dcaa5; }
+  .toast.error { background: var(--danger-soft); border: 1px solid var(--danger); color: #f09595; }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-icon">✦</div>
+    <div>
+      <div class="logo-text">Copilot</div>
+      <div class="logo-sub">AI Life Assistant</div>
+    </div>
+  </div>
+
+  <button class="new-chat-btn" onclick="newChat()">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    New conversation
+  </button>
+
+  <div>
+    <div class="section-label">Documents</div>
+    <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
+      <input type="file" id="file-input" accept=".txt,.pdf,.md" multiple onchange="handleFiles(this.files)">
+      <div class="upload-icon">📎</div>
+      <div class="upload-text"><strong>Upload files</strong><br>TXT, PDF, or Markdown</div>
+    </div>
+    <div class="uploaded-files" id="uploaded-files" style="margin-top:8px;"></div>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="model-badge">
+      <div class="model-dot"></div>
+      claude-opus-4-5
+    </div>
+  </div>
+</aside>
+
+<!-- Main -->
+<main class="main">
+  <header class="chat-header">
+    <div class="chat-title">What can I help you with today?</div>
+    <div class="chat-hint">Press ⌘↵ to send</div>
+  </header>
+
+  <div class="messages" id="messages">
+    <div class="welcome" id="welcome">
+      <h1 class="welcome-headline">Your personal<br><em>AI life copilot</em></h1>
+      <p class="welcome-desc">Ask anything, upload documents to chat with, and get intelligent assistance tailored to you.</p>
+      <div class="suggestions">
+        <button class="suggestion" onclick="suggest('Help me plan my week and prioritize my tasks')">
+          <span class="suggestion-icon">📅</span>
+          <span class="suggestion-text">Plan & prioritize my week</span>
+        </button>
+        <button class="suggestion" onclick="suggest('Give me a morning routine for better productivity')">
+          <span class="suggestion-icon">☀️</span>
+          <span class="suggestion-text">Build a morning routine</span>
+        </button>
+        <button class="suggestion" onclick="suggest('Summarize the documents I uploaded')">
+          <span class="suggestion-icon">📄</span>
+          <span class="suggestion-text">Summarize my documents</span>
+        </button>
+        <button class="suggestion" onclick="suggest('What are the best strategies for learning a new skill quickly?')">
+          <span class="suggestion-icon">🎯</span>
+          <span class="suggestion-text">Learn a new skill fast</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="input-area">
+    <div class="input-wrapper">
+      <textarea id="msg-input" placeholder="Ask me anything…" rows="1"
+        onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+      <button class="send-btn" id="send-btn" onclick="sendMessage()">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M8 13V3M3 8l5-5 5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+    <div class="input-hint">AI can make mistakes · Check important info</div>
+  </div>
+</main>
+
+<script>
+const API = '';  // Same origin — empty means relative URLs
+let history = [];
+let isLoading = false;
+
+// ─── Auto-resize textarea ───────────────────────────────────────────────────
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+}
+
+// ─── Key handler ────────────────────────────────────────────────────────────
+function handleKey(e) {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); sendMessage(); }
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+// ─── Send message ────────────────────────────────────────────────────────────
+async function sendMessage() {
+  const input = document.getElementById('msg-input');
+  const text = input.value.trim();
+  if (!text || isLoading) return;
+
+  hideWelcome();
+  addMessage('user', text);
+  input.value = '';
+  autoResize(input);
+  setLoading(true);
+
+  const thinkingEl = addThinking();
+
+  try {
+    const res = await fetch(`${API}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text, history }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    const reply = data.response;
+
+    history.push({ role: 'user', content: text });
+    history.push({ role: 'assistant', content: reply });
+
+    thinkingEl.remove();
+    addMessage('ai', reply);
+  } catch (err) {
+    thinkingEl.remove();
+    addMessage('ai', `Sorry, something went wrong: ${err.message}`);
+  } finally {
+    setLoading(false);
+  }
+}
+
+// ─── Suggestion chips ────────────────────────────────────────────────────────
+function suggest(text) {
+  document.getElementById('msg-input').value = text;
+  sendMessage();
+}
+
+// ─── Render helpers ──────────────────────────────────────────────────────────
+function hideWelcome() {
+  const w = document.getElementById('welcome');
+  if (w) w.remove();
+}
+
+function addMessage(role, text) {
+  const el = document.createElement('div');
+  el.className = `msg ${role}`;
+  const avatarLabel = role === 'ai' ? '✦' : '👤';
+  const avatarClass = role === 'ai' ? 'avatar ai' : 'avatar user-av';
+  el.innerHTML = `
+    <div class="${avatarClass}">${avatarLabel}</div>
+    <div class="bubble">${formatText(text)}</div>`;
+  document.getElementById('messages').appendChild(el);
+  scrollToBottom();
+  return el;
+}
+
+function addThinking() {
+  const el = document.createElement('div');
+  el.className = 'msg ai thinking';
+  el.innerHTML = `<div class="avatar ai">✦</div>
+    <div class="bubble"><div class="dot-pulse"><span></span><span></span><span></span></div></div>`;
+  document.getElementById('messages').appendChild(el);
+  scrollToBottom();
+  return el;
+}
+
+function formatText(text) {
+  return text
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br>')
+    .replace(/^/, '<p>').replace(/$/, '</p>');
+}
+
+function scrollToBottom() {
+  const el = document.getElementById('messages');
+  el.scrollTop = el.scrollHeight;
+}
+
+function setLoading(v) {
+  isLoading = v;
+  document.getElementById('send-btn').disabled = v;
+}
+
+// ─── New chat ────────────────────────────────────────────────────────────────
+function newChat() {
+  history = [];
+  const msgs = document.getElementById('messages');
+  msgs.innerHTML = '';
+  const welcome = document.createElement('div');
+  welcome.id = 'welcome';
+  welcome.className = 'welcome';
+  welcome.innerHTML = `
+    <h1 class="welcome-headline">Your personal<br><em>AI life copilot</em></h1>
+    <p class="welcome-desc">Ask anything, upload documents to chat with, and get intelligent assistance tailored to you.</p>
+    <div class="suggestions">
+      <button class="suggestion" onclick="suggest('Help me plan my week and prioritize my tasks')">
+        <span class="suggestion-icon">📅</span><span class="suggestion-text">Plan & prioritize my week</span>
+      </button>
+      <button class="suggestion" onclick="suggest('Give me a morning routine for better productivity')">
+        <span class="suggestion-icon">☀️</span><span class="suggestion-text">Build a morning routine</span>
+      </button>
+      <button class="suggestion" onclick="suggest('Summarize the documents I uploaded')">
+        <span class="suggestion-icon">📄</span><span class="suggestion-text">Summarize my documents</span>
+      </button>
+      <button class="suggestion" onclick="suggest('What are the best strategies for learning a new skill quickly?')">
+        <span class="suggestion-icon">🎯</span><span class="suggestion-text">Learn a new skill fast</span>
+      </button>
+    </div>`;
+  msgs.appendChild(welcome);
+}
+
+// ─── File upload ─────────────────────────────────────────────────────────────
+const uploadZone = document.getElementById('upload-zone');
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('drag-over');
+  handleFiles(e.dataTransfer.files);
+});
+
+async function handleFiles(files) {
+  for (const file of Array.from(files)) {
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const res = await fetch(`${API}/api/upload`, { method: 'POST', body: formData });
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+      addFileChip(file.name);
+      showToast(`${file.name} indexed (${data.chunks} chunks)`, 'success');
+    } catch (err) {
+      showToast(`Failed to upload ${file.name}`, 'error');
+    }
+  }
+}
+
+function addFileChip(name) {
+  const container = document.getElementById('uploaded-files');
+  const chip = document.createElement('div');
+  chip.className = 'file-chip';
+  chip.innerHTML = `<span title="${name}">📄 ${name}</span>
+    <button class="remove" onclick="removeFile(this, '${name}')">✕</button>`;
+  container.appendChild(chip);
+}
+
+async function removeFile(btn, name) {
+  btn.closest('.file-chip').remove();
+  try {
+    await fetch(`${API}/api/documents`, { method: 'DELETE' });
+  } catch {}
+}
+
+// ─── Toast ───────────────────────────────────────────────────────────────────
+function showToast(msg, type = 'success') {
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+</script>
+</body>
+</html>
