@@ -1,6 +1,6 @@
 # AI Life Copilot
 
-A FastAPI + Claude-powered personal AI assistant with document RAG and a clean dark-themed UI.
+A FastAPI + personal AI assistant with document RAG and a clean dark-themed UI.
 
 ## Project Structure
 
@@ -16,7 +16,7 @@ ai-copilot/
 │   └── upload_routes.py     # POST /api/upload, DELETE /api/documents
 ├── services/
 │   ├── __init__.py
-│   ├── llm_service.py       # Claude API wrapper with RAG
+│   ├── llm_service.py       # API wrapper with RAG
 │   └── embeddings.py        # TF-IDF document store
 └── data/                    # Auto-created: uploaded files + chunk index
 ```
